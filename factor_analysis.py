@@ -54,16 +54,25 @@ def BDI(ri, nonri):
 
 def draw_bdi(ri, nonri):
     fig, ax = plt.subplots()
-    ax.grid(axis='y')
+    ax.grid(axis='x')
     ax.set_title("BDI_score")
-    ax.set_ylabel("BDI_score")
-    ax.set_xticklabels([label[4]]+label[6:])
+    ax.set_xlabel("BDI_score")
+    bdi_label = ['VWS', 'MPI', 'SST', 'TO', 'DIV200', 'RH600', 'VOR850', 'v']
+    ax.set_yticklabels(bdi_label)
     bdi_score = [BDI(ri[:, i], nonri[:, i]) for i in range(4, 13)]
     bdi_score.pop(1)
-    plt.bar([label[4]]+label[6:], bdi_score, color='black')
+    bdi_new = []
+    bdi_new.append(bdi_score[1])
+    bdi_new.append(bdi_score[6])
+    bdi_new.append(bdi_score[5])
+    bdi_new.append(bdi_score[7])
+    bdi_new.append(bdi_score[3])
+    bdi_new.append(bdi_score[2])
+    bdi_new.append(bdi_score[4])
+    bdi_new.append(bdi_score[0])
+    plt.barh(bdi_label, bdi_new, color='black')
     plt.savefig("BDI_score.png")
     plt.show()
-
 
 
 if __name__ == '__main__':
