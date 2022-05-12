@@ -1,0 +1,65 @@
+time_mean:RI 1997847124.430224
+time_mean:NONRI 1998268857.846868
+time_meandiff:RI 421733.416644
+time_pvalue: 0.217175
+
+type_mean:RI 2.936006
+type_mean:NONRI 2.845459
+type_meandiff:RI -0.090547
+type_pvalue: 0.007882
+
+lat_mean:RI 15.446415
+lat_mean:NONRI 19.354351
+lat_meandiff:RI 3.907936
+lat_pvalue: 0.000000
+
+lon_mean:RI 138.940632
+lon_mean:NONRI 135.118145
+lon_meandiff:RI -3.822488
+lon_pvalue: 0.000000
+
+v_mean:RI 27.980725
+v_mean:NONRI 27.436181
+v_meandiff:RI -0.544544
+v_pvalue: 0.047119
+
+24v_mean:RI 1.000000
+24v_mean:NONRI 0.000000
+24v_meandiff:RI -1.000000
+24v_pvalue: 0.000000
+
+VWS_mean:RI 5.142496
+VWS_mean:NONRI 7.810705
+VWS_meandiff:RI 2.668208
+VWS_pvalue: 0.000000
+
+RH600_mean:RI 66.350406
+RH600_mean:NONRI 63.949879
+RH600_meandiff:RI -2.400527
+RH600_pvalue: 0.000000
+
+DIV200_mean:RI 5.564560
+DIV200_mean:NONRI 4.538506
+DIV200_meandiff:RI -1.026054
+DIV200_pvalue: 0.000000
+
+VOR850_mean:RI 12.002300
+VOR850_mean:NONRI 12.656377
+VOR850_meandiff:RI 0.654077
+VOR850_pvalue: 0.000023
+
+SST_mean:RI 29.240601
+SST_mean:NONRI 28.531904
+SST_meandiff:RI -0.708697
+SST_pvalue: 0.000000
+
+MPI_mean:RI 73.772290
+MPI_mean:NONRI 63.103008
+MPI_meandiff:RI -10.669282
+MPI_pvalue: 0.000000
+
+TO_mean:RI -77.473457
+TO_mean:NONRI -73.133051
+TO_meandiff:RI 4.340406
+TO_pvalue: 0.000000
+
