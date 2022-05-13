@@ -4,7 +4,6 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import matplotlib.ticker as mpt
-import datetime
 from sklearn import metrics
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -12,7 +11,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import normalize
 import random
 import numpy.ma as npm
-from sklearn.metrics import roc_curve
+import seaborn as sns
+
 
 label = ['time', 'type', 'lat', 'lon', 'v', '24v', 'VWS', 'RH600', 'DIV200', 'VOR850', 'SST', 'MPI', 'TO', 'Forecast']
 preindex = {"0": 23582, "12": 21720, "24": 19920, "36": 18152, "48": 16422, "60": 14760, "72": 13180, "84": 11678,
@@ -141,7 +141,7 @@ def all_accuracy(predictions, test_labels):
     return metrics.accuracy_score(test_labels, predictions)
 
 
-def ri_accuracy(predictions, test_labels):
+def pod(predictions, test_labels):
     mask = test_labels != 1
     test_labels_1 = npm.masked_array(test_labels, mask=mask)
     predictions_1 = npm.masked_array(predictions, mask=mask)
@@ -160,15 +160,25 @@ def ori_accuracy(predictions, test_labels):
     return Ori_accuracy
 
 
+def far(predictions, test_labels):
+    mask = predictions != 1
+    test_labels_0 = npm.masked_array(test_labels, mask=mask)
+    predictions_0 = npm.masked_array(predictions, mask=mask)
+    result = predictions_0 != test_labels_0
+    far_rate = np.sum(result != 0) / np.sum(test_labels == 0)
+    return far_rate
+
+
 def result_processor(rf, test_labels, test_features, feature_list):
     oob_score = 1 - rf.oob_score_
     # print("oob_error:", oob_score)
     predictions = rf.predict(test_features)
     print("All_accuracy:", all_accuracy(predictions, test_labels))
-    RI_counts, RI_accuracy = ri_accuracy(predictions, test_labels)
+    RI_counts, RI_accuracy = pod(predictions, test_labels)
     print("There are %d RI" % RI_counts)
     print("RI_accuracy :", RI_accuracy)
     print("Ori_accuracy :", ori_accuracy(predictions, test_labels))
+    print("FAR:", far(predictions, ))
 
     # importances = list(rf.feature_importances_)
     # # List of tuples with variable and importance
@@ -225,8 +235,63 @@ def plot(typhoon):
     plt.show()
 
 
+def sel_example(data, n=10):
+    example = []
+    sel = np.random.choice(np.array([i for i in range(len(data))]), n, replace=False)
+    for i in range(n):
+        example.append(data[sel[i]])
+    example = np.array(example)
+    return example
 
+
+def example(pre, feature, label):
+    RI_index = np.where(label == 1)
+    RI_label = np.array(feature)[RI_index]
+    pre_label = np.array(pre)[RI_index]
+    right_index = np.where(pre_label == 1)
+    error_index = np.where(pre_label != 1)
+    right_label = RI_label[right_index]
+    error_label = RI_label[error_index]
+    right_example = sel_example(right_label)
+    if len(error_label) > 10:
+        err_example = sel_example(error_label)
+    else:
+        err_example = error_label
+    right_example[:, 9] = - right_example[:, 9]
+    err_example[:, 9] = - err_example[:, 9]
+    return right_example, err_example
+
+
+def draw_feature_scatter(right_example, err_example, n=10):
+    fig = plt.figure(figsize=(10, 5))
+    ax = fig.add_subplot(1, 1, 1)
+    feature_list.pop(-1)
+    feature_list.append('-TO')
+    delta = 0.05
+    xaxis = np.array([i for i in range(10)])
+    for i in range(n):
+        plt.scatter(xaxis + delta, right_example[i], s=10, c='b')
+        plt.scatter(xaxis - delta,  err_example[i], s=10, c='r')
+    ax.set_xticks(xaxis)
+    ax.set_xticklabels(feature_list)
+    ax.legend(['True', 'False'])
+    ax.set_title('Example Feature')
+    plt.savefig("Example_Feature.png")
+    plt.show()
+
+
+def draw_fea_boxplot(right, err, fea):
+    fea.pop(-1)
+    fea.append('-TO')
+    df1 = pd.DataFrame(right, columns=fea)
+    df2 = pd.DataFrame(err, columns=fea)
+    sns.boxplot(x=df1, y=df2)
+    plt.show()
 
 
 if __name__ == '__main__':
-    plot()
+    coll = clas(0)
+    rf, train_features, test_features, train_labels, test_labels, feature_list = coll
+    prediction = rf.predict(test_features)
+    right_example, err_example = example(prediction, test_features, test_labels)
+    draw_fea_boxplot(right_example, err_example, feature_list)

@@ -9,7 +9,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import normalize
 from sklearn import metrics
 from sklearn.metrics import roc_curve
-
+from matplotlib import ticker
 
 label = ['time', 'type', 'lat', 'lon', 'v', '24v', 'VWS', 'RH600', 'DIV200', 'VOR850', 'SST', 'MPI', 'TO', 'Forecast']
 preindex = {"0": 23582, "12": 21720, "24": 19920, "36": 18152, "48": 16422, "60": 14760, "72": 13180, "84": 11678,
@@ -83,9 +83,16 @@ def result_processor(rf, test_labels, test_features, feature_list):
     # print("oob_error:", oob_score)
     predictions = rf.predict(test_features)
     # print("Accuracy", metrics.accuracy_score(test_labels, predictions))
-    result = (predictions == test_labels)
-    All_accuracy = np.sum(result != 0) / (np.sum(result != 0) + np.sum(result == 0))
+    # result = (predictions == test_labels)
+    # All_accuracy = np.sum(result != 0) / (np.sum(result != 0) + np.sum(result == 0))
     # print("All_accuracy :", All_accuracy)
+
+    mask = predictions != 1
+    test_labels_0 = npm.masked_array(test_labels, mask=mask)
+    predictions_0 = npm.masked_array(predictions, mask=mask)
+    result = predictions_0 != test_labels_0
+    far_rate = np.sum(result != 0) / np.sum(test_labels == 0)
+
     mask = test_labels != 1
     test_labels_1 = npm.masked_array(test_labels, mask=mask)
     predictions_1 = npm.masked_array(predictions, mask=mask)
@@ -119,7 +126,7 @@ def result_processor(rf, test_labels, test_features, feature_list):
     # plt.legend(loc="lower right")
     # plt.show()
 
-    return oob_score, metrics.accuracy_score(test_labels, predictions), All_accuracy, RI_accuracy, Ori_accuracy, rf_fpr, \
+    return oob_score, metrics.accuracy_score(test_labels, predictions), far_rate, RI_accuracy, Ori_accuracy, rf_fpr, \
            rf_tpr, rf_thresholds
 
 
@@ -142,18 +149,18 @@ def classifier(hours, estimator=1000):
     return result_processor(rf, test_labels, test_features, feature_list)
 
 
-def average_accuracy():
+def average_accuracy(interval_time=24):
     # oob_score_list = []
     # accuracy_list = []
-    leng = len([i for i in range(0, 108, 24)])
+    leng = len([i for i in range(0, 108, interval_time)])
     All_accuracy_list = [np.array([])] * leng
     RI_accuracy_list = [np.array([])] * leng
-    Ori_accuracy_list = [np.array([])] * leng
+    # Ori_accuracy_list = [np.array([])] * leng
     # rf_fpr_list = [np.array([])] * 5
     # rf_tpr_list = [np.array([])] * 5
     # rf_thr_list = [np.array([])] * 5
-    for hours in range(0, 108, 24):
-        rank = int(hours / 24)
+    for hours in range(0, 108, interval_time):
+        rank = int(hours / interval_time)
         for i in range(100):
             oob_score, accuracy_score, All_accuracy, RI_accuracy, Ori_accuracy, rf_fpr, rf_tpr, rf_thresholds = classifier(hours)
             print("This is %d" % hours)
@@ -161,7 +168,7 @@ def average_accuracy():
             # accuracy_list.append(accuracy_score)
             All_accuracy_list[rank] = np.append(All_accuracy_list[rank], All_accuracy)
             RI_accuracy_list[rank] = np.append(RI_accuracy_list[rank], RI_accuracy)
-            Ori_accuracy_list[rank] = np.append(Ori_accuracy_list[rank], Ori_accuracy)
+            # Ori_accuracy_list[rank] = np.append(Ori_accuracy_list[rank], Ori_accuracy)
 
 
     # plt.figure()
@@ -176,15 +183,15 @@ def average_accuracy():
     # plt.show()
 
     fig, ax = plt.subplots()
-    plt.plot([hours for hours in range(0, 108, 24)], [RI_accuracy_list[average].mean() for average in range(leng)])
-    plt.plot([hours for hours in range(0, 108, 24)], [All_accuracy_list[average].mean() for average in range(leng)])
-    ax.legend(["RI", "All"])
-    ax.set_title("Average_accuracy")
+    plt.plot([hours for hours in range(0, 108, interval_time)], [RI_accuracy_list[average].mean() for average in range(leng)])
+    plt.plot([hours for hours in range(0, 108, interval_time)], [All_accuracy_list[average].mean() for average in range(leng)])
+    ax.legend(["POD", "FAR"])
+    ax.set_title("Accuracy")
     ax.set_xlabel("Forecast_time")
-    ax.set_ylabel("Accuracy")
-    ax.set_xticks([i for i in range(0, 108, 24)])
-    plt.savefig("Average_accuracy.png")
-    plt.show()
+    ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
+    ax.set_xticks([i for i in range(0, 108, interval_time)])
+    plt.savefig("Accuracy%d.png" % interval_time)
+    # plt.show()
 
 
 def oob_score():
@@ -256,21 +263,5 @@ def percent(data, v, tile):
 
 
 if __name__ == '__main__':
-    df = np.loadtxt("0.txt")
-    df = pd.DataFrame(data=df, columns=label)
-    # relatives(df)
-    fig, ax = plt.subplots()
-    ax.scatter(df[label[4]], df[label[5]], s=0.05, c="black")
-    x, y = percent(df[label[4]], df[label[5]], 50)
-    ax.plot(x, y, c="b")
-    x, y = percent(df[label[4]], df[label[5]], 95)
-    ax.plot(x, y, c="r")
-    ax.legend(["50th", "95th"])
-    ax.set_xlabel("%s(%s)" % (label[4], unit[0]))
-    ax.set_ylabel(r"$ \Delta V24(m\cdot s^{-1}) $")
-    # if not i:
-    # plt.show()
-    plt.savefig("%s_rela.png" % label[4])
-    # plt.show()
-
-    relatives(df)
+    average_accuracy()
+    average_accuracy(12)
