@@ -257,9 +257,23 @@ def example(pre, feature, label):
         err_example = sel_example(error_label)
     else:
         err_example = error_label
+
+    pre_index = np.where(pre == 1)
+    pre_l = pre[pre_index]
+    l_l = np.array(label)[pre_index]
+    fea_l = np.array(feature)[pre_index]
+    result = pre_l != l_l
+    wrong_index = np.where(result == True)
+    fpr = fea_l[wrong_index]
+    if len(pre_l) > 10:
+        fpr = sel_example(fpr)
+    else:
+        pass
+
     right_example[:, 9] = - right_example[:, 9]
     err_example[:, 9] = - err_example[:, 9]
-    return right_example, err_example
+    fpr[:, 9] = -fpr[:, 9]
+    return right_example, err_example, fpr
 
 
 def draw_feature_scatter(right_example, err_example, n=10):
@@ -280,12 +294,31 @@ def draw_feature_scatter(right_example, err_example, n=10):
     plt.show()
 
 
-def draw_fea_boxplot(right, err, fea):
-    fea.pop(-1)
-    fea.append('-TO')
-    df1 = pd.DataFrame(right, columns=fea)
-    df2 = pd.DataFrame(err, columns=fea)
-    sns.boxplot(x=df1, y=df2)
+def draw_plot(data, offset, edge_color, fill_color):
+    pos = np.arange(data.shape[1])+offset
+    bp = ax.boxplot(data, positions=pos, widths=0.3, patch_artist=True)
+    for element in ['boxes', 'whiskers', 'fliers', 'medians', 'caps']:
+        plt.setp(bp[element], color=edge_color)
+    for patch in bp['boxes']:
+        patch.set(facecolor=fill_color)
+    return bp
+
+
+def draw_ex():
+    coll = clas(0)
+    rf, train_features, test_features, train_labels, test_labels, feature_list = coll
+    prediction = rf.predict(test_features)
+    right_example, err_example, fdr_example = example(prediction, test_features, test_labels)
+    feature_list.pop(-1)
+    feature_list.append('-TO')
+    fig, ax = plt.subplots()
+    a = draw_plot(right_example, -0.3, "tomato", "white")
+    b = draw_plot(err_example, +0.3, "skyblue", "white")
+    c = draw_plot(fdr_example, 0, "green", "white")
+    ax.set_xticks([i for i in range(10)])
+    ax.set_xticklabels(feature_list)
+    ax.legend([a["boxes"][0], b["boxes"][0], c["boxes"][0]], ["Accuracy", "FNR", "FPR"])
+    plt.savefig("example.png")
     plt.show()
 
 
@@ -293,5 +326,14 @@ if __name__ == '__main__':
     coll = clas(0)
     rf, train_features, test_features, train_labels, test_labels, feature_list = coll
     prediction = rf.predict(test_features)
-    right_example, err_example = example(prediction, test_features, test_labels)
-    draw_fea_boxplot(right_example, err_example, feature_list)
+    ac_example, fnr_example, fpr_example = example(prediction, test_features, test_labels)
+    feature_list.pop(-1)
+    feature_list.append('-TO')
+    fig, ax = plt.subplots()
+    a = draw_plot(ac_example, -0.3, "tomato", "white")
+    b = draw_plot(fnr_example, +0.3, "skyblue", "white")
+    c = draw_plot(fpr_example, 0, "green", "white")
+    ax.set_xticks([i for i in range(10)])
+    ax.set_xticklabels(feature_list)
+    ax.legend([a["boxes"][0], b["boxes"][0], c["boxes"][0]], ["Accuracy", "FNR", "FPR"])
+    plt.show()
